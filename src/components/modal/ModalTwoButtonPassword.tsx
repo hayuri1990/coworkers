@@ -10,7 +10,7 @@ import { useEffect } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   children?: React.ReactNode;
   accessToken: string;
 }
@@ -57,7 +57,7 @@ const ModalTwoButtonPassword = ({
       );
       openToast('비밀번호가 변경되었습니다.', 'success');
       setTimeout(() => {
-        onClose();
+        onClose?.();
       }, 500);
       setTimeout(() => {
         closeToast();
