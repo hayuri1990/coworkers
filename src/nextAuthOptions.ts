@@ -107,8 +107,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
               '/auth/signIn/GOOGLE',
               {
                 state: state,
-                redirectUri:
-                  'https://coworkers-team2.vercel.app/api/auth/callback/google',
+                redirectUri: process.env.GOOGLE_REDIRECT_URI,
                 token: idToken,
               },
             );
