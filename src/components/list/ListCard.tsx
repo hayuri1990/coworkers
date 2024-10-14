@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import Checkbox from './CheckBox';
+import Checkbox from '@/components/pages/list/CheckBox';
 import Comment from '@/assets/icons/comment.svg';
 import Kebab from '@/assets/icons/ic_kebab.svg';
 import Callender from '@/assets/icons/ic_calendar.svg';
