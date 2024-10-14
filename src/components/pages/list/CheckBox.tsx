@@ -11,7 +11,7 @@ interface CheckboxProps {
 
 const Checkbox = ({ checked, onChange }: CheckboxProps) => {
   const handleChange = () => {
-    onChange(!checked);
+    onChange?.(!checked);
   };
   return (
     <div
