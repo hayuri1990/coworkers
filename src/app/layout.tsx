@@ -46,12 +46,6 @@ const SessionStoreUpdater = () => {
         accessToken: session.accessToken || null,
         accessTokenExpires: session.accessTokenExpires || null,
       });
-
-      // 상태 업데이트 후 상태 확인
-      console.log(
-        'Updated Zustand State after clearing:',
-        useSessionStore.getState(),
-      );
     }
   }, [session, setSession]);
 
