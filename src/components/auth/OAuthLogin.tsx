@@ -27,12 +27,15 @@ export default function OAuthLoginOptions({
 
       // providers 설정 전 다음 코드로 넘어가지 않도록, getProviders 완료 후 다시 providers 확인
       if (res && res[providerId]) {
-        signIn(providerId, { redirect: false });
+        signIn(providerId, {
+          redirect: true,
+          callbackUrl: process.env.KAKAO_REDIRECT_URI,
+        });
       }
     } else {
       // providers가 이미 존재하는 경우 바로 로그인 처리
       if (providers[providerId]) {
-        signIn(providerId, { redirect: false });
+        signIn(providerId, { redirect: true, callbackUrl: '/' });
       }
     }
   };
