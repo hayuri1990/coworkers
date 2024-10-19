@@ -1,10 +1,10 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { publicAxiosInstance } from '@/app/api/auth/axiosInstance';
 
-export default function KakaoTalk() {
+function KakaoTalk() {
   const searchParams = useSearchParams();
   const code = searchParams.get('code');
   const state = searchParams.get('state');
@@ -27,7 +27,15 @@ export default function KakaoTalk() {
       // code, state가 있을 때만 POST 요청
       kakaoLoginHandler(code, state);
     }
-  }, [code]);
+  }, [code, state]);
 
-  return <div>page</div>;
+  return <div />;
+}
+
+export default function KakaoTalkPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <KakaoTalk />
+    </Suspense>
+  );
 }
