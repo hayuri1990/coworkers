@@ -5,10 +5,10 @@ import { useState } from 'react';
 import CardProfile from './CardProfile';
 
 interface AnswerCardProps {
-  updateAt: Date;
-  name: string;
+  updateAt?: Date;
+  name?: string;
   profileImage?: string;
-  content: string;
+  content?: string;
 }
 
 export default function AnswerCard({

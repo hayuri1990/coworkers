@@ -5,7 +5,7 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import GoogleProvider from 'next-auth/providers/google';
 import { JWT } from 'next-auth/jwt';
 
-export const getOptions = (req: Request): NextAuthOptions => ({
+export const getOptions = (req?: Request): NextAuthOptions => ({
   debug: true,
   providers: [
     CredentialsProvider({

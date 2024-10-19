@@ -3,8 +3,8 @@ import Image from 'next/image';
 import TimeAgo from './TimeAgo';
 
 interface CardProp {
-  updateAt: Date;
-  name: string;
+  updateAt?: Date;
+  name?: string;
   profileImage?: string;
 }
 
@@ -25,7 +25,7 @@ export default function CardProfile({
         <p className="text-md-medium text-text-primary">{name}</p>
       </div>
       <p className="text-md-regular text-text-secondary">
-        <TimeAgo date={updateAt} />
+        {updateAt && <TimeAgo date={updateAt} />}
       </p>
     </div>
   );
