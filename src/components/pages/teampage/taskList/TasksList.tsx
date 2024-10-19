@@ -5,6 +5,7 @@ import { useAddTaskListModalStore } from '@/store/useAddTaskListModalStore';
 import EmptyTaskList from './EmptyTaskList';
 import { useAddTaskListToastStore } from '@/store/useToastStore';
 import Toast from '@/components/toast/Toast';
+import Link from 'next/link';
 
 interface TaskListProps {
   taskLists: TaskList[];
@@ -15,6 +16,7 @@ export default function TasksList({ taskLists, groupId }: TaskListProps) {
   const { isModalOpen, openModal, closeModal } = useAddTaskListModalStore();
   const { toastVisible, toastMessage, toastType, openToast, closeToast } =
     useAddTaskListToastStore();
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
@@ -33,7 +35,9 @@ export default function TasksList({ taskLists, groupId }: TaskListProps) {
       <div className="flex flex-col gap-4">
         {taskLists && taskLists.length > 0 ? (
           taskLists.map((tasklist: TaskList) => (
-            <Task key={tasklist.id} tasklist={tasklist} />
+            <Link key={tasklist.id} href={`/list/${groupId}`} passHref>
+              <Task key={tasklist.id} tasklist={tasklist} />
+            </Link>
           ))
         ) : (
           <EmptyTaskList />

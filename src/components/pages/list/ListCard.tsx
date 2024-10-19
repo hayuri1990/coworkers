@@ -6,13 +6,13 @@ import Kebab from '@/assets/icons/ic_kebab.svg';
 import Callender from '@/assets/icons/ic_calendar.svg';
 import Repeat from '@/assets/icons/ic_repeat.svg';
 import VectorIcon from '@/assets/icons/ic-vector.svg';
-import { ITaskList } from '@/types/Task';
+import { Task } from '@/types/Group';
 import ListCardDropdown from './ListCardDropdown';
 import ModalToDoDef from './ModalToDoDef';
 import { format, parseISO } from 'date-fns';
 
 interface ListCardProps {
-  task: ITaskList;
+  task: Task;
   onSelectOption: (option: string) => void;
   onCheckboxChange: (checked: boolean) => void;
   checked: boolean;
@@ -76,7 +76,7 @@ export default function ListCard({
         <div className="flex gap-1.5">
           <Image src={Repeat} alt="Repeat" width={16} height={16} />
           <div className="text-xs-regular h-4 text-left text-text-default">
-            매일 반복
+            {task.frequency}
           </div>
         </div>
       </div>

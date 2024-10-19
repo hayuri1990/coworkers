@@ -4,9 +4,9 @@ import { authAxiosInstance } from '@/app/api/auth/axiosInstance';
 import { IGroup } from '@/types/Group';
 
 // /{teamId}/groups/{groupId}/task-lists/{id}
-export const getTaskList = async (id: string) => {
+export const getTaskList = async (groupId: string, id: string) => {
   const response = await authAxiosInstance.get<IGroup>(
-    `/groups/4/task-lists/${id}`,
+    `/groups/${groupId}/task-lists/${id}`,
   );
   return response.data;
 };
@@ -26,9 +26,12 @@ export const updateTaskList = async (id: string, data: { name: string }) => {
 
 // POST
 // /{teamId}/groups/{groupId}/task-lists
-export const createTaskList = async (data: { name: string }) => {
+export const createTaskList = async (
+  groupId: string | string[],
+  data: { name: string },
+) => {
   const response = await authAxiosInstance.post(
-    `/groups/{groupId}/task-lists`,
+    `/groups/${groupId}/task-lists`,
     data,
   );
   return response.data;

@@ -9,18 +9,54 @@ import ModalPortal from '../ModalPortal/ModalPortal';
 import { useModalToDoStore } from '@/store/useModalToDoStore';
 import { useMutation } from '@tanstack/react-query';
 import { authAxiosInstance } from '@/app/api/auth/axiosInstance';
+import { Task } from '@/types/Group';
 
 interface ModalProps {
   isOpen: boolean;
   groupId: string;
-  taskListId: number;
+  taskListId: number | undefined;
   onClose: () => void;
   children?: React.ReactNode;
+  onCreate: (data: Task) => void;
+  refetch: () => void;
 }
 
-const WeekDays = ['일', '월', '화', '수', '목', '금', '토']; //주 반복에서의 요일
+const WeekDays: Array<'일' | '월' | '화' | '수' | '목' | '금' | '토'> = [
+  '일',
+  '월',
+  '화',
+  '수',
+  '목',
+  '금',
+  '토',
+];
 
-const ModalToDo = ({ isOpen, onClose, groupId, taskListId }: ModalProps) => {
+// 요일을 숫자로 변환하는 함수
+const convertToNumber = (
+  days: Array<'일' | '월' | '화' | '수' | '목' | '금' | '토'>,
+): number[] => {
+  const dayMap: Record<'일' | '월' | '화' | '수' | '목' | '금' | '토', number> =
+    {
+      일: 0, // Sunday
+      월: 1, // Monday
+      화: 2, // Tuesday
+      수: 3, // Wednesday
+      목: 4, // Thursday
+      금: 5, // Friday
+      토: 6, // Saturday
+    };
+
+  return days.map((day) => dayMap[day]);
+};
+const weekDaysNumbers: number[] = convertToNumber(WeekDays);
+const ModalToDo = ({
+  isOpen,
+  onClose,
+  groupId,
+  taskListId,
+  onCreate,
+  refetch,
+}: ModalProps) => {
   // 날짜 및 캘린더 상태 관리
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
@@ -38,26 +74,22 @@ const ModalToDo = ({ isOpen, onClose, groupId, taskListId }: ModalProps) => {
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
 
-  const { mutate: createTask } = useMutation({
-    mutationKey: [name, description, startDate, groupId, taskListId],
-    mutationFn: async () => {
-      const response = await authAxiosInstance.post(
-        `/groups/${groupId}/task-lists/${taskListId}/tasks`,
-        {
-          name,
-          description,
-          startDate: startDate?.toISOString(),
-          // TODO: 반복 일정인 경우 데이터 처리
-          frequencyType: 'MONTHLY',
-          monthDay: 1,
-        },
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      onClose();
-    },
-  });
+  const getFrequency = () => {
+    switch (selectedOption) {
+      case '반복 없음':
+        return undefined;
+      case '한 번':
+        return 'ONCE';
+      case '매일':
+        return 'DAILY';
+      case '주 반복':
+        return 'WEEKLY';
+      case '월 반복':
+        return 'MONTHLY';
+      default:
+        return undefined;
+    }
+  };
 
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutsideCalendar);
@@ -98,6 +130,66 @@ const ModalToDo = ({ isOpen, onClose, groupId, taskListId }: ModalProps) => {
         : [...prevSelectedDays, day],
     );
   };
+
+  const { mutate: createTask } = useMutation({
+    mutationKey: [
+      name,
+      description,
+      startDate,
+      groupId,
+      taskListId,
+      selectedOption,
+    ],
+    mutationFn: async () => {
+      const frequencyType = getFrequency(); // 올바른 frequencyType 반환
+
+      // taskListId가 유효한지 확인
+      if (!taskListId) {
+        throw new Error('Task List ID is required');
+      }
+
+      const requestData = {
+        name: name || '',
+        description: description || '',
+        startDate: startDate ? startDate.toISOString() : undefined,
+        frequencyType, // 주기 유형
+        ...(frequencyType === 'MONTHLY' && {
+          monthDay: startDate ? startDate.getDate() : undefined, // 월의 날 추가
+        }),
+        ...(frequencyType === 'WEEKLY' &&
+          weekDaysNumbers.length > 0 && {
+            weekDays: weekDaysNumbers, // 주간 요일 추가
+          }),
+      };
+
+      // 필수 필드 검증
+      if (frequencyType === 'MONTHLY' && requestData.monthDay === undefined) {
+        throw new Error('monthDay is required for MONTHLY frequency');
+      }
+
+      if (frequencyType === 'WEEKLY' && requestData.weekDays?.length === 0) {
+        throw new Error('weekDays is required for WEEKLY frequency');
+      }
+
+      console.log('요청 데이터:', JSON.stringify(requestData, null, 2));
+
+      const response = await authAxiosInstance.post(
+        `/groups/${groupId}/task-lists/${taskListId}/tasks`,
+        requestData,
+      );
+
+      console.log('서버 응답:', JSON.stringify(response.data, null, 2));
+
+      return response.data;
+    },
+    onSuccess: (data: Task) => {
+      console.log('할 일 생성 성공:', data);
+      onCreate(data);
+      onClose();
+      refetch();
+    },
+  });
+  console.log('모달에서 startDate 파라미터 :', startDate?.toISOString());
   console.log(selectedDays);
   if (!isOpen) return null;
 
@@ -235,6 +327,7 @@ const ModalToDo = ({ isOpen, onClose, groupId, taskListId }: ModalProps) => {
               onClick={() => {
                 // TODO: 데이터 생성 API 호출
                 createTask();
+                onClose();
               }}
             >
               만들기

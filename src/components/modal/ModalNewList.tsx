@@ -1,17 +1,23 @@
-import React from 'react';
-import CloseIcon from '@/assets/icons/close.svg';
-import Image from 'next/image';
+import { useState } from 'react';
 import ModalPortal from '../ModalPortal/ModalPortal';
 import { useModalNewListStore } from '@/store/useModalNewListStore';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubmit: (name: string) => void;
   children?: React.ReactNode;
 }
 
-const ModalNewList = ({ isOpen, onClose }: ModalProps) => {
+const ModalNewList = ({ isOpen, onClose, onSubmit }: ModalProps) => {
   const { closeModal: closeNewListModal } = useModalNewListStore();
+  const [name, setName] = useState<string>('');
   if (!isOpen) return null;
+
+  const handleCreate = () => {
+    onSubmit(name); // onSubmit으로 name 전달
+    setName('');
+    onClose(); // 모달 닫기
+  };
 
   return (
     <ModalPortal onClose={closeNewListModal}>
@@ -32,6 +38,10 @@ const ModalNewList = ({ isOpen, onClose }: ModalProps) => {
               <div className="flex h-[75px] w-full flex-col justify-between">
                 <h2 className="text-lg-medium text-text-primary">목록 이름</h2>
                 <input
+                  value={name}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                  }}
                   className="placeholder:text-lg-regular h-12 rounded-xl border border-solid border-border-primary bg-background-secondary p-4 placeholder:text-text-default focus:border-none focus:outline-none focus:ring-1 focus:ring-[#F8FAFC]"
                   placeholder="목록 이름을 입력해주세요."
                 />
@@ -39,7 +49,7 @@ const ModalNewList = ({ isOpen, onClose }: ModalProps) => {
             </div>
             <button
               className="px-auto py-auto h-12 w-full rounded-xl bg-brand-primary text-text-inverse"
-              onClick={onClose}
+              onClick={handleCreate}
             >
               만들기
             </button>
@@ -49,5 +59,4 @@ const ModalNewList = ({ isOpen, onClose }: ModalProps) => {
     </ModalPortal>
   );
 };
-
 export default ModalNewList;
