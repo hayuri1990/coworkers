@@ -5,6 +5,8 @@ import { encode } from 'next-auth/jwt';
 const secret = process.env.NEXTAUTH_SECRET as string;
 
 export async function GET(request: NextRequest) {
+  console.log('Kakao callback route hit'); // 파일 호출 확인
+
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
