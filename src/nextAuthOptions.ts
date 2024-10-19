@@ -72,6 +72,9 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
+      if (url.includes('/api/auth/callback/kakao')) {
+        return url;
+      }
       return baseUrl;
     },
     async signIn(params) {
