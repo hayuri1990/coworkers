@@ -6,8 +6,11 @@ const nextConfig = {
       'k.kakaocdn.net',
       'example.com',
       'lh3.googleusercontent.com',
-      "hips.hearstapps.com",
+      'hips.hearstapps.com',
     ],
+  },
+  env: {
+    KAKAO_REDIRECT_URI: process.env.KAKAO_REDIRECT_URI,
   },
 };
 
