@@ -77,6 +77,8 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
       return baseUrl;
     },
     async signIn(params) {
+      console.log('signIn callback 호출됨', params);
+
       // 구글 로그인
       if (params.account?.provider === 'google') {
         if (!req?.url) {
@@ -91,12 +93,17 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
           const idToken = params.account?.id_token;
           params.account.id_token = idToken;
 
+          console.log('@@google 로그인 state', state);
+          console.log('@@google 로그인 idToken', idToken);
+
           return true;
         }
       }
       return true;
     },
     async jwt({ token, user, account }) {
+      console.log('jwt callback 호출됨', { token, user, account });
+
       // 구글 로그인
       if (account?.provider === 'google') {
         token = { ...token };
@@ -159,6 +166,8 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
 
       // 토큰 갱신
       if (token.accessToken && token.refreshToken) {
+        console.log('토큰 갱신 처리 시작');
+
         const currentTime = Math.floor(Date.now() / 1000);
         let accessTokenExpired = Math.floor(token.accessTokenExpires / 1000);
         const timeRemaining = accessTokenExpired - 60 * 10 - currentTime;
