@@ -42,7 +42,7 @@ export default function ResetPwdModal({
         '/user/send-reset-password-email',
         {
           email: data.email,
-          redirectUrl: process.env.NEXTAUTH_URL,
+          redirectUrl: process.env.NEXT_PUBLIC_NEXTAUTH_URL,
         },
       );
       if (result.status === 200) {
