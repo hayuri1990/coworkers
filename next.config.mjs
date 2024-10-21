@@ -9,9 +9,6 @@ const nextConfig = {
       'hips.hearstapps.com',
     ],
   },
-  env: {
-    KAKAO_REDIRECT_URI: process.env.KAKAO_REDIRECT_URI,
-  },
 };
 
 export default nextConfig;
