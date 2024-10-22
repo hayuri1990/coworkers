@@ -65,7 +65,7 @@ export default function Page() {
         closeThirdModal?.();
       }, 500);
       setTimeout(() => {
-        signOut({ callbackUrl: process.env.NEXT_PUBLIC_NEXTAUTH_URL });
+        signOut({ callbackUrl: process.env.NEXTAUTH_URL });
         router.push('/');
       }, 2500);
     } catch (error) {
