@@ -42,7 +42,6 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
       authorization: {
         params: {
-          // grant_type: 'authorization_code',
           redirect_uri: process.env.KAKAO_REDIRECT_URI,
           response_type: 'code',
           scope: 'profile_nickname, profile_image',
@@ -74,7 +73,14 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      return baseUrl;
+      // 로그인 후 'callbackUrl'이 설정되어 있다면 우선 사용
+      if (url.startsWith(baseUrl)) {
+        const callbackUrl = new URL(url).searchParams.get('callbackUrl');
+        if (callbackUrl) {
+          return callbackUrl;
+        }
+      }
+      return '/login';
     },
     async signIn(params) {
       console.log('signIn callback 호출됨', params);
