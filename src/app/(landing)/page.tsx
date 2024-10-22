@@ -12,9 +12,10 @@ import { getServerSession } from 'next-auth';
 import { getOptions } from '@/nextAuthOptions';
 import { authAxiosInstance } from '../api/auth/axiosInstance';
 import { redirect } from 'next/navigation';
+import { NextRequest } from 'next/server';
 
-export default async function Landing() {
-  const session = await getServerSession(getOptions());
+export default async function Landing(req: NextRequest) {
+  const session = await getServerSession(getOptions(req));
 
   if (session && session.accessToken) {
     const token = session.accessToken;
@@ -25,8 +26,8 @@ export default async function Landing() {
     });
     if (userResponse.data.memberships.length > 0) {
       redirect(`/teampage/${userResponse.data.memberships[0].groupId}`);
-    } 
-    if (userResponse.data.memberships.length === 0){
+    }
+    if (userResponse.data.memberships.length === 0) {
       redirect(`/no-team`);
     }
   }
