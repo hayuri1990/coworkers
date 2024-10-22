@@ -5,6 +5,8 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import GoogleProvider from 'next-auth/providers/google';
 import { JWT } from 'next-auth/jwt';
 
+console.log('Kakao Redirect URI:', process.env.KAKAO_REDIRECT_URI);
+
 export const getOptions = (req?: Request): NextAuthOptions => ({
   debug: true,
   providers: [
@@ -78,27 +80,6 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
     async signIn(params) {
       console.log('signIn callback 호출됨', params);
 
-      // 카카오 로그인
-      if (params.account?.provider === 'kakao') {
-        if (!req?.url) {
-          console.error('req.url is not defined');
-          return false;
-        } else {
-          const parseUrl = new URL(req.url);
-          const searchParams = new URLSearchParams(parseUrl.search);
-          const code = searchParams.get('code');
-          const state = searchParams.get('state');
-
-          params.account.code = code;
-          params.account.state = state;
-
-          console.log('@@@code', code);
-          console.log('@@@state', state);
-
-          return true;
-        }
-      }
-
       // 구글 로그인
       if (params.account?.provider === 'google') {
         if (!req?.url) {
@@ -123,54 +104,6 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
     },
     async jwt({ token, user, account }) {
       console.log('jwt callback 호출됨', { token, user, account });
-
-      // 카카오 로그인
-      if (account?.provider === 'kakao') {
-        token = { ...token };
-
-        const code = account.code;
-        const state = account.state;
-
-        console.log('@@@code', code);
-        console.log('@@@state', state);
-
-        if (code) {
-          try {
-            console.log('카카오 API 호출 시도');
-
-            const signInResponse = await publicAxiosInstance.post(
-              '/auth/signIn/KAKAO',
-              {
-                state: state,
-                redirectUri: process.env.KAKAO_REDIRECT_URI,
-                token: code,
-              },
-            );
-            const newTokens = signInResponse.data;
-            console.log('@@@userData', newTokens);
-
-            // JWT에 필요한 토큰 정보 추가
-            token.user = newTokens.user;
-            token.accessToken = newTokens.accessToken;
-            token.refreshToken = newTokens.refreshToken;
-            token.accessTokenExpires =
-              Math.floor(new Date().getTime()) + 60 * 60 * 1 * 1000;
-
-            return token;
-          } catch (error) {
-            console.log('카카오 로그인 API 호출 실패', error);
-            return {
-              ...token,
-              error: '카카오 로그인 API 호출 실패',
-            };
-          }
-        } else {
-          return {
-            ...token,
-            error: 'Missing code',
-          };
-        }
-      }
 
       // 구글 로그인
       if (account?.provider === 'google') {
