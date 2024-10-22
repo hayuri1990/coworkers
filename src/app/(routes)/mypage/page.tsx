@@ -49,7 +49,6 @@ export default function Page() {
 
   // 비밀번호 변경
   const { password } = loginStore();
-  console.log('@@@password', password);
 
   // 회원 탈퇴
   async function handleAccountDeletion() {
