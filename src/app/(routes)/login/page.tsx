@@ -17,6 +17,7 @@ import OAuthLoginOptions from '@/components/auth/OAuthLogin';
 import useSessionStore from '@/store/useSessionStore';
 import { useLoginToastStore } from '@/store/useToastStore';
 import Toast from '@/components/toast/Toast';
+import { authAxiosInstance } from '@/app/api/auth/axiosInstance';
 
 export default function LoginPage() {
   const loginFields = loginFieldData();
@@ -54,12 +55,43 @@ export default function LoginPage() {
     setPassword(data.password);
 
     const result = await signInUser();
+
+    if (result?.ok) {
+      openToast(`${user?.nickname}님, 환영합니다.`, 'success');
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } else {
+      openToast('로그인에 실패했습니다.', 'error');
+    }
   };
 
   useEffect(() => {
-    if (user && accessToken) {
-      router.push('/');
-    }
+    const fetchUserData = async () => {
+      if (user && accessToken) {
+        openToast(`${user.nickname}님, 환영합니다.`, 'success');
+        setTimeout(async () => {
+          try {
+            const response = await authAxiosInstance.get('/user', {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+
+            // 사용자의 팀 정보가 있을 경우 해당 팀 페이지로 리다이렉트
+            if (response.data.memberships.length > 0) {
+              router.push(`/teampage/${response.data.memberships[0].groupId}`);
+            } else {
+              router.push(`/no-team`);
+            }
+          } catch (error) {
+            console.error('팀 정보를 가져오는 중 오류 발생:', error);
+          }
+        }, 1500);
+      }
+    };
+
+    fetchUserData();
   }, [user, accessToken]);
 
   return (
