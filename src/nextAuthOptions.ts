@@ -5,8 +5,6 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import GoogleProvider from 'next-auth/providers/google';
 import { JWT } from 'next-auth/jwt';
 
-console.log('Kakao Redirect URI:', process.env.KAKAO_REDIRECT_URI);
-
 export const getOptions = (req?: Request): NextAuthOptions => ({
   debug: true,
   providers: [
