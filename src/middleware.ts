@@ -18,7 +18,7 @@ export const config = {
 export async function middleware(req: NextRequest) {
   // JWT 토큰 가져오기
   const token = await getToken({ req });
-  console.log('JWT Token:', token);
+  console.log('***JWT Token:', token);
 
   // 사용자가 로그인하지 않은 경우 로그인 페이지로 리다이렉트
   if (!token) {
