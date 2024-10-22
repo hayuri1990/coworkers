@@ -1,13 +1,17 @@
 import { NextAuthOptions, Session } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { publicAxiosInstance } from '@/app/api/auth/axiosInstance';
+import {
+  authAxiosInstance,
+  publicAxiosInstance,
+} from '@/app/api/auth/axiosInstance';
 import KakaoProvider from 'next-auth/providers/kakao';
 import GoogleProvider from 'next-auth/providers/google';
 import { JWT } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
+import { AxiosError } from 'axios';
+import { encode } from 'punycode';
 
-console.log('Kakao Redirect URI:', process.env.KAKAO_REDIRECT_URI);
-
-export const getOptions = (req?: Request): NextAuthOptions => ({
+export const getOptions = (req: NextRequest): NextAuthOptions => ({
   debug: true,
   providers: [
     CredentialsProvider({
@@ -28,7 +32,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
           if (user) {
             return {
               ...user,
-              accessTokenExpires: Date.now() + 60 * 60 * 1 * 1000,
+              accessTokenExpires: Date.now() + 60 * 60 * 1 * 1000, // 3시간
             };
           } else {
             return null;
@@ -45,9 +49,9 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
       authorization: {
         params: {
           // grant_type: 'authorization_code',
-          redirect_uri: process.env.KAKAO_REDIRECT_URI,
+          // redirect_uri: process.env.KAKAO_REDIRECT_URI,
           response_type: 'code',
-          scope: 'profile_nickname, profile_image',
+          // scope: 'profile_nickname, profile_image',
         },
       },
     }),
@@ -77,32 +81,94 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
       return baseUrl;
     },
     async signIn(params) {
-      console.log('signIn callback 호출됨', params);
+      // 카카오 로그인
+      if (params.account?.provider === 'kakao') {
+        if (!req?.url) {
+          console.error('req.url is not defined');
+          return false;
+        }
+
+        const parseUrl = new URL(req.url);
+        const searchParams = new URLSearchParams(parseUrl.search);
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
+
+        params.account.state = state;
+        params.account.code = code;
+
+        console.log(111, '@@@url', parseUrl.href);
+        console.log(111, '@@@code', code);
+        console.log(111, '@@@state', state);
+
+        return true;
+      }
 
       // 구글 로그인
       if (params.account?.provider === 'google') {
         if (!req?.url) {
           console.error('req.url is not defined');
           return false;
-        } else {
-          const parseUrl = new URL(req.url);
-          const searchParams = new URLSearchParams(parseUrl.search);
-          const state = searchParams.get('state');
-
-          params.account.state = state;
-          const idToken = params.account?.id_token;
-          params.account.id_token = idToken;
-
-          console.log('@@google 로그인 state', state);
-          console.log('@@google 로그인 idToken', idToken);
-
-          return true;
         }
+
+        const parseUrl = new URL(req.url);
+        const searchParams = new URLSearchParams(parseUrl.search);
+        const state = searchParams.get('state');
+
+        params.account.state = state;
+        const idToken = params.account?.id_token;
+        params.account.id_token = idToken;
+
+        return true;
       }
       return true;
     },
     async jwt({ token, user, account }) {
-      console.log('jwt callback 호출됨', { token, user, account });
+      // 카카오 로그인
+      if (account?.provider === 'kakao') {
+        token = { ...token };
+
+        const code = account.code;
+        const state = account.state;
+
+        console.log(222, '@@@code', code);
+        console.log(222, '@@@state', state);
+
+        if (code) {
+          try {
+            console.log(111, '@@@kakao 로그인 api 호출 시도');
+            const signInResponse = await publicAxiosInstance.post(
+              '/auth/signIn/KAKAO',
+              {
+                state: state,
+                redirectUri: process.env.KAKAO_REDIRECT_URI,
+                token: code,
+              },
+            );
+            const newTokens = signInResponse.data;
+            console.log(111, '@@@newTokens', newTokens);
+
+            // JWT에 필요한 토큰 정보 추가
+            token.user = newTokens.user;
+            token.accessToken = newTokens.accessToken;
+            token.refreshToken = newTokens.refreshToken;
+            token.accessTokenExpires =
+              Math.floor(new Date().getTime()) + 60 * 60 * 1 * 1000;
+
+            return token;
+          } catch (error) {
+            console.log('Kakao 로그인 API 호출 실패', error);
+            return {
+              ...token,
+              error: 'Kakao 로그인 API 호출 실패',
+            };
+          }
+        } else {
+          return {
+            ...token,
+            error: 'Missing ID Token',
+          };
+        }
+      }
 
       // 구글 로그인
       if (account?.provider === 'google') {
@@ -166,8 +232,6 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
 
       // 토큰 갱신
       if (token.accessToken && token.refreshToken) {
-        console.log('토큰 갱신 처리 시작');
-
         const currentTime = Math.floor(Date.now() / 1000);
         let accessTokenExpired = Math.floor(token.accessTokenExpires / 1000);
         const timeRemaining = accessTokenExpired - 60 * 10 - currentTime;
