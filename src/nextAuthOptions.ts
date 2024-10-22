@@ -105,6 +105,23 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
     async jwt({ token, user, account }) {
       console.log('jwt callback 호출됨', { token, user, account });
 
+      if (account?.provider === 'kakao') {
+        const cookies = req?.headers.get('cookie');
+        const sessionCookie = cookies
+          ?.split('; ')
+          .find((row) => row.startsWith('next-auth.session-token='))
+          ?.split('=')[1];
+
+        console.log('쿠키에서 가져온 session token:', sessionCookie);
+
+        // 쿠키에서 세션 토큰을 찾았으면 토큰에 저장
+        if (sessionCookie) {
+          token.sessionToken = sessionCookie;
+        }
+
+        return token;
+      }
+
       // 구글 로그인
       if (account?.provider === 'google') {
         token = { ...token };
@@ -149,11 +166,6 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
             error: 'Missing ID Token',
           };
         }
-      }
-
-      if (account?.provider === 'kakao') {
-        console.log('###token', token);
-        return token;
       }
 
       // 최초 로그인
