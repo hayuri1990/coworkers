@@ -45,7 +45,7 @@ export default function ProfileDropdown({
   }, []);
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: process.env.NEXTAUTH_URL });
+    signOut({ callbackUrl: '/' });
   };
 
   if (isLoading) {
