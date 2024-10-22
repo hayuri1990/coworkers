@@ -67,6 +67,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
     updateAge: 60 * 60 * 1,
   },
   jwt: {
+    secret: process.env.NEXTAUTH_SECRET,
     maxAge: 60 * 60 * 1,
   },
   pages: {
