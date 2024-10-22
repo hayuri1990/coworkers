@@ -55,8 +55,9 @@ export default function LoginPage() {
     setPassword(data.password);
 
     const result = await signInUser();
+    console.log('###result', result);
 
-    if (result?.ok) {
+    if (result) {
       openToast(`${user?.nickname}님, 환영합니다.`, 'success');
       setTimeout(() => {
         router.push('/');
@@ -70,6 +71,7 @@ export default function LoginPage() {
     const fetchUserData = async () => {
       if (user && accessToken) {
         openToast(`${user.nickname}님, 환영합니다.`, 'success');
+
         setTimeout(async () => {
           try {
             const response = await authAxiosInstance.get('/user', {

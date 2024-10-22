@@ -73,14 +73,13 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      // 로그인 후 'callbackUrl'이 설정되어 있다면 우선 사용
-      if (url.startsWith(baseUrl)) {
-        const callbackUrl = new URL(url).searchParams.get('callbackUrl');
-        if (callbackUrl) {
-          return callbackUrl;
-        }
+      const currentPath = url;
+
+      if (currentPath === '/login') {
+        return baseUrl;
       }
-      return '/login';
+
+      return `${baseUrl}/login`;
     },
     async signIn(params) {
       console.log('signIn callback 호출됨', params);
