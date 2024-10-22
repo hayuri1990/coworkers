@@ -26,10 +26,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-   // 요청 경로에서 groupId 추출 (e.g., teampage/{groupId})
+  // 요청 경로에서 groupId 추출 (e.g., teampage/{groupId})
   const url = req.nextUrl.clone();
   const pathSegments = url.pathname.split('/');
-  
+
   // 경로가 '/teampage/{groupId}' 형태인지 확인
   if (pathSegments.length >= 3 && pathSegments[1] === 'teampage') {
     const groupId = pathSegments[2]; // teampage/{groupId}에서 groupId 추출
@@ -43,13 +43,16 @@ export async function middleware(req: NextRequest) {
 
     try {
       // 사용자의 소속된 그룹 데이터 가져오기 (토큰을 사용해 API 호출)
-      const response = await authAxiosInstance.get('/user', {
+      const response = await fetch('/user', {
         headers: {
           Authorization: `Bearer ${token.accessToken}`,
         },
       });
 
-      const memberships = response.data.memberships;
+      if (!response.ok) throw new Error('Failed to fetch user data');
+
+      const data = await response.json();
+      const memberships = data.memberships;
       console.log('User memberships:', memberships);
 
       // 사용자가 소속된 그룹 중에 해당 groupId가 있는지 확인
@@ -62,7 +65,6 @@ export async function middleware(req: NextRequest) {
         console.warn('사용자가 소속되지 않은 그룹에 접근하려고 했습니다.');
         return NextResponse.redirect(new URL('/no-access', req.url));
       }
-
     } catch (error: any) {
       console.error('사용자 그룹 정보를 가져오는 중 오류 발생:', error);
 
@@ -84,6 +86,7 @@ export async function middleware(req: NextRequest) {
       // 그 외의 경우 '/no-access'로 리다이렉트
       return NextResponse.redirect(new URL('/no-access', req.url));
     }
-  }}
+  }
+}
 
-  // 해당 경로가 아닌 경우 요청을 계속 처리
+// 해당 경로가 아닌 경우 요청을 계속 처리
