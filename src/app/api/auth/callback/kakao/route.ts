@@ -52,12 +52,16 @@ export async function GET(request: NextRequest) {
         const nextResponse = NextResponse.redirect(new URL('/', request.url));
 
         // 생성된 JWT 토큰을 쿠키에 저장
-        nextResponse.cookies.set('next-auth.session-token', encodedToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
-          path: '/',
-        });
+        nextResponse.cookies.set(
+          '__Secure-next-auth.session-token',
+          encodedToken,
+          {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            path: '/',
+          },
+        );
         console.log('JWT 토큰이 쿠키에 저장되었습니다.');
         return nextResponse;
       }
