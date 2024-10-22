@@ -43,18 +43,13 @@ export async function middleware(req: NextRequest) {
 
     try {
       // 사용자의 소속된 그룹 데이터 가져오기 (토큰을 사용해 API 호출)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
+      const response = await authAxiosInstance.get('/user', {
         headers: {
           Authorization: `Bearer ${token.accessToken}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Error fetching data: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const memberships = data.memberships;
+      const memberships = response.data.memberships;
       console.log('User memberships:', memberships);
 
       // 사용자가 소속된 그룹 중에 해당 groupId가 있는지 확인
