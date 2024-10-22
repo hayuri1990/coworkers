@@ -71,6 +71,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
   },
   pages: {
     signIn: '/login',
+    signOut: '/',
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
