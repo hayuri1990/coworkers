@@ -44,6 +44,10 @@ export default function ProfileDropdown({
     };
   }, []);
 
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/' });
+  };
+
   if (isLoading) {
     return <p>...loading</p>;
   }
@@ -113,7 +117,7 @@ export default function ProfileDropdown({
           <LogoutModal
             isOpen={true}
             onClose={closeModal}
-            handleSignOut={signOut}
+            handleSignOut={handleSignOut}
           />
         </ModalWrapper>
       )}
