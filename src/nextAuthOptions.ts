@@ -151,6 +151,11 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
         }
       }
 
+      if (account?.provider === 'kakao') {
+        console.log('###token', token);
+        return token;
+      }
+
       // 최초 로그인
       if (user) {
         token = { ...token, ...user };
