@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
         // 생성된 JWT 토큰을 쿠키에 저장
         nextResponse.cookies.set('next-auth.session-token', encodedToken, {
           httpOnly: true,
-          secure: false,
-          sameSite: 'strict',
+          secure: true,
+          sameSite: 'lax',
           path: '/',
         });
         console.log('JWT 토큰이 쿠키에 저장되었습니다.');

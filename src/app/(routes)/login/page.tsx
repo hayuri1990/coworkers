@@ -17,7 +17,6 @@ import OAuthLoginOptions from '@/components/auth/OAuthLogin';
 import useSessionStore from '@/store/useSessionStore';
 import { useLoginToastStore } from '@/store/useToastStore';
 import Toast from '@/components/toast/Toast';
-import { useSession } from 'next-auth/react';
 
 export default function LoginPage() {
   const loginFields = loginFieldData();
@@ -54,17 +53,14 @@ export default function LoginPage() {
     setEmail(data.email);
     setPassword(data.password);
 
-    // const result = await signInUser();
-
-    // if (result?.ok) {
-    //   openToast(`${user?.nickname}님, 환영합니다.`, 'success');
-    //   setTimeout(() => {
-    //     router.push('/');
-    //   }, 1500);
-    // } else {
-    //   openToast('로그인에 실패했습니다.', 'error');
-    // }
+    const result = await signInUser();
   };
+
+  useEffect(() => {
+    if (user && accessToken) {
+      router.push('/');
+    }
+  }, [user, accessToken]);
 
   return (
     <div
