@@ -73,12 +73,6 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      const currentPath = url;
-
-      if (currentPath === '/login') {
-        return baseUrl;
-      }
-
       return `${baseUrl}/login`;
     },
     async signIn(params) {

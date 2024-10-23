@@ -49,7 +49,9 @@ export async function GET(request: NextRequest) {
         console.log('새 JWT 토큰: ', encodedToken);
 
         // 리다이렉트 응답 생성
-        const nextResponse = NextResponse.redirect(new URL('/', request.url));
+        const nextResponse = NextResponse.redirect(
+          new URL('/login', request.url),
+        );
 
         // 생성된 JWT 토큰을 쿠키에 저장
         nextResponse.cookies.set(
