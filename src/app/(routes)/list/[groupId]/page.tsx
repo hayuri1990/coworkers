@@ -8,11 +8,9 @@ import ListCard from '@/components/pages/list/ListCard';
 import FilterSelection from '@/components/pages/list/FilterSelection';
 import { format, addDays, subDays } from 'date-fns';
 import Calendar from '@/components/calendar/Calendar';
-import { useModalStore } from '@/store/useModalStore';
-import ModalPortal from '@/components/ModalPortal/ModalPortal';
 import ModalToDo from '@/components/modal/ModalToDo';
 import ModalNewList from '@/components/modal/ModalNewList';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useModalNewListStore } from '@/store/useModalNewListStore';
 import { useModalToDoStore } from '@/store/useModalToDoStore';
 import { useParams } from 'next/navigation';
@@ -22,7 +20,12 @@ import useGroup from '@/hooks/useGroup';
 import { Task, TaskList } from '@/types/Group';
 import { authAxiosInstance } from '@/app/api/auth/axiosInstance';
 import { getTaskList } from '@/api/taskListApis';
-import { createTaskList } from '@/api/taskListApis';
+import { createTaskList, updateTask } from '@/api/taskListApis';
+import { number } from 'yup';
+
+interface ExtendedTask extends Task {
+  weekDays?: number[]; // Optional로 추가
+}
 
 export default function List() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -30,28 +33,29 @@ export default function List() {
   const { userData } = useUser(user?.id);
   const { group, isLoading, error } = useGroup(groupId);
 
+  // ADMIN 권한이 있는지 확인
+  const isAdmin = group?.members.some(
+    (member) => member.role === 'ADMIN' && member.userId === user?.id,
+  );
+
   // 날짜 및 캘린더 상태 관리
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [selectDate, setSelectDate] = useState<Date | null>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const calendarRef = useRef<HTMLDivElement>(null);
-
   const getDayOfWeek = (date: Date) => {
     return new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date);
   };
-
   const handlePrevDay = () => {
     if (selectDate) {
       setSelectDate(subDays(selectDate, 1)); // 하루 전으로 이동
     }
   };
-
   const handleNextDay = () => {
     if (selectDate) {
       setSelectDate(addDays(selectDate, 1)); // 하루 앞으로 이동
     }
   };
-
   const handleClickOutsideCalendar = (event: MouseEvent) => {
     if (
       calendarRef.current &&
@@ -60,18 +64,19 @@ export default function List() {
       setIsCalendarOpen(false);
     }
   };
-
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutsideCalendar);
     return () => {
       document.removeEventListener('mousedown', handleClickOutsideCalendar);
     };
   }, []);
-
   // 리스트 카드 드롭다운 상태 관리
   const [selectedOption, setSelectedOption] = useState<string>('');
   const handleSelectOption = (option: string) => {
     setSelectedOption(option);
+    if (option === '수정하기') {
+      setIsEditMode(true);
+    }
   };
 
   // 체크박스 상태 관리
@@ -82,38 +87,31 @@ export default function List() {
       [taskId]: checked,
     }));
   };
-
   // 모달 상태 관리
   const { closeModal: closeNewListModal, isModalOpen: isNewListOpen } =
     useModalNewListStore();
   const { closeModal: closeToDoModal, isModalOpen: isToDoOpen } =
     useModalToDoStore();
-
   // 선택된 taskList
   const [selectedTaskList, setSelectedTaskList] = useState<
     TaskList | undefined
   >(undefined);
-
   // taskList의 task.name 배열을 필터로 전달
   const [taskNames, setTaskNames] = useState<string[]>([]);
-
   // group이 변경될 때마다 taskNames 초기화
   useEffect(() => {
     const names = group?.taskLists.flatMap((taskList) => taskList.name) || [];
     setTaskNames(names);
   }, [group]);
-
   const addTasksName = (name: string) => {
     setTaskNames((prev) => [...prev, name]);
   };
-
   const handleSelectFilter = (filter: string) => {
     // 선택된 필터에 따른 task list 찾기
     const selectedList = group?.taskLists.find(
       (taskList) => taskList.name === filter,
     );
     setSelectedTaskList(selectedList);
-    console.log('선택된 task list:', selectedList);
   };
 
   // Task List 생성 후 서버에 전송하고 다시 불러오기
@@ -127,7 +125,6 @@ export default function List() {
         alert('그룹 내 이름이 같은 할 일 목록이 존재합니다.'); // 오류 메시지 표시
         return; // 중복 시 함수 종료
       }
-
       const newTaskList = await createTaskList(groupId, { name }); // createTaskList 함수 호출
       addTasksName(newTaskList.name); // 새로운 taskList 이름 추가
       refetch(); // 최신 데이터 다시 가져오기
@@ -136,7 +133,6 @@ export default function List() {
       console.error('Task list 생성 중 오류:', error);
     }
   };
-
   // task 불러오기 쿼리
   const { data: tasksResponse, refetch } = useQuery({
     queryKey: [groupId, selectedTaskList, selectDate],
@@ -153,23 +149,7 @@ export default function List() {
     },
     enabled: !!selectedTaskList && !!groupId,
   });
-  // // task 불러오기 쿼리
-  // const { data: tasksResponse, refetch } = useQuery({
-  //   queryKey: [groupId, selectedTaskList, selectDate],
-  //   queryFn: async () => {
-  //     const response = await authAxiosInstance.get(
-  //       `/groups/${groupId}/task-lists/${selectedTaskList?.id}/tasks`,
-  //       {
-  //         params: { date: selectDate?.toISOString() },
-  //       },
-  //     );
-  //     console.log('서버로부터 받아온 tasks 데이터:', response.data);
-  //     console.log('selectDate 파라미터:', selectDate?.toISOString());
-  //     return response.data;
-  //   },
-  //   enabled: !!selectedTaskList && !!groupId,
-  // });
-  // Task List 선택 후 task 데이터 받아오기
+
   useEffect(() => {
     if (tasksResponse) {
       setSelectedTaskList((prevList) => {
@@ -183,24 +163,76 @@ export default function List() {
       });
     }
   }, [tasksResponse]);
-
   //할일 상태 관리
   const [tasks, setTasks] = useState<Task[]>([]);
   const handleCreateTask = (newTask: Task) => {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
+  const [editingTask, setEditingTask] = useState<ExtendedTask | undefined>(
+    undefined,
+  );
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const handleEdit = (taskId: number) => {
+    const taskToEdit = tasksResponse.find(
+      (task: ExtendedTask) => task.id === taskId,
+    );
 
-  // 콘솔 확인
-  console.log('tasksResponse', groupId, selectedTaskList, tasksResponse);
-  console.log('isToDoOpen:', isToDoOpen);
-  console.log(`taskNames: ${taskNames}`);
+    if (taskToEdit) {
+      setEditingTask(taskToEdit); // 선택한 작업 정보 저장
+      useModalToDoStore.getState().openModal();
+      console.log('수정할 task:', taskToEdit);
+      setIsEditMode(true);
+    } else {
+      console.error(`Task with ID ${taskId} not found`);
+    }
+  };
 
+  const deleteTaskFn = async (taskId: number) => {
+    await authAxiosInstance.delete(
+      `/groups/${groupId}/task-lists/${selectedTaskList?.id}/tasks/${taskId}`,
+    );
+  };
+
+  // 할일 삭제 mutation
+  const { mutate: deleteTask } = useMutation({
+    mutationKey: ['deleteTask', { taskId: number }], // taskId를 사용하여 고유한 mutationKey 설정
+    mutationFn: async (taskId: number) => {
+      // taskId의 유효성 확인
+      if (!taskId) {
+        throw new Error('Task ID is required');
+      }
+
+      console.log('삭제할 Task ID:', taskId);
+
+      const response = await authAxiosInstance.delete(
+        `/groups/${groupId}/task-lists/${selectedTaskList?.id}/tasks/${taskId}`,
+      );
+
+      console.log('서버 응답:', JSON.stringify(response.data, null, 2));
+
+      return response.data; // 필요시 반환값 설정
+    },
+    onSuccess: (data) => {
+      console.log('할 일 삭제 성공:', data);
+      // 삭제 후 상태 업데이트 (예: UI에서 해당 task 제거)
+
+      refetch(); // 필요시 데이터 재조회
+    },
+    onError: (error: Error) => {
+      console.error('할 일 삭제 오류:', error);
+    },
+  });
+
+  const handleDelete = (taskId: number) => {
+    deleteTask(taskId);
+  };
+  console.log('isEditMode', isEditMode);
+  console.log('existingTask:', editingTask);
   return (
     <div className="lg:w-300.25-custom">
       <span className="font-pretendard mb-27px lg: md-6 h-5.25-custom leading-5.25-custom mt-6 block w-9 whitespace-nowrap text-center text-lg font-bold md:my-6 md:h-6 md:w-10 md:text-xl md:leading-6 lg:mb-6 lg:mt-10 lg:h-6 lg:w-12 lg:text-left">
         할 일
       </span>
-
       <div className="mb-4 flex justify-between md:mb-6 lg:mb-6">
         <div className="flex space-x-3">
           <div>
@@ -250,12 +282,10 @@ export default function List() {
           />
         )}
       </div>
-
       <FilterSelection
         filters={taskNames || []}
         onSelect={handleSelectFilter}
       />
-
       {!group?.taskLists || group.taskLists.length === 0 ? (
         <div className="text-md-medium jus mt-[232px] text-center text-text-default md:mt-[393px] lg:mt-[359px]">
           아직 할 일 목록이 없습니다.
@@ -277,13 +307,18 @@ export default function List() {
               handleCheckboxChange(tasksResponse.id, checked)
             }
             onSelectOption={handleSelectOption}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         ))
       )}
 
       <button
         className="fixed bottom-6 right-6 rounded-full bg-brand-primary px-[21px] py-3.5"
-        onClick={() => useModalToDoStore.getState().openModal()}
+        onClick={() => {
+          useModalToDoStore.getState().openModal();
+          setIsEditMode(false);
+        }}
       >
         + 할 일 추가
       </button>
@@ -295,6 +330,8 @@ export default function List() {
           groupId={groupId}
           taskListId={selectedTaskList?.id}
           refetch={refetch}
+          existingTask={editingTask}
+          isEditMode={isEditMode}
         />
       )}
     </div>
