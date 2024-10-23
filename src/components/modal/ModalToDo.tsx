@@ -1,5 +1,4 @@
 //리스트페이지에서 할 일을 생성할 때의 모달 컴포넌트
-
 import React, { useState, useRef, useEffect } from 'react';
 import Calendar from '@/components/calendar/Calendar';
 import Image from 'next/image';
@@ -10,7 +9,6 @@ import { useModalToDoStore } from '@/store/useModalToDoStore';
 import { useMutation } from '@tanstack/react-query';
 import { authAxiosInstance } from '@/app/api/auth/axiosInstance';
 import { Task } from '@/types/Group';
-
 interface ModalProps {
   isOpen: boolean;
   groupId: string;
@@ -19,6 +17,11 @@ interface ModalProps {
   children?: React.ReactNode;
   onCreate: (data: Task) => void;
   refetch: () => void;
+  isEditMode?: boolean;
+  existingTask?: ExtendedTask;
+}
+interface ExtendedTask extends Task {
+  weekDays?: number[]; // Optional로 추가
 }
 
 const WeekDays: Array<'일' | '월' | '화' | '수' | '목' | '금' | '토'> = [
@@ -30,7 +33,6 @@ const WeekDays: Array<'일' | '월' | '화' | '수' | '목' | '금' | '토'> = [
   '금',
   '토',
 ];
-
 // 요일을 숫자로 변환하는 함수
 const convertToNumber = (
   days: Array<'일' | '월' | '화' | '수' | '목' | '금' | '토'>,
@@ -45,10 +47,10 @@ const convertToNumber = (
       금: 5, // Friday
       토: 6, // Saturday
     };
-
   return days.map((day) => dayMap[day]);
 };
 const weekDaysNumbers: number[] = convertToNumber(WeekDays);
+
 const ModalToDo = ({
   isOpen,
   onClose,
@@ -56,13 +58,14 @@ const ModalToDo = ({
   taskListId,
   onCreate,
   refetch,
+  isEditMode,
+  existingTask,
 }: ModalProps) => {
   // 날짜 및 캘린더 상태 관리
   const [startDate, setStartDate] = useState<Date | null>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState<boolean>(false);
   const calendarRef = useRef<HTMLDivElement>(null);
   const { closeModal: closeToDoModal } = useModalToDoStore();
-
   const handleClickOutsideCalendar = (event: MouseEvent) => {
     if (
       calendarRef.current &&
@@ -73,7 +76,6 @@ const ModalToDo = ({
   };
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-
   const getFrequency = () => {
     switch (selectedOption) {
       case '반복 없음':
@@ -90,23 +92,19 @@ const ModalToDo = ({
         return undefined;
     }
   };
-
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutsideCalendar);
     return () => {
       document.removeEventListener('mousedown', handleClickOutsideCalendar);
     };
   }, []);
-
   // 드롭다운 상태 관리
   const [isDropDownOpen, setIsDropDownOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState('반복 안함');
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-
   const options = ['반복 안함', '한 번', '매일', '주 반복', '월 반복'];
   const filteredOptions = options.filter((option) => option !== selectedOption);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const handleClickOutsideDropDown = (event: MouseEvent) => {
     if (
       dropdownRef.current &&
@@ -115,7 +113,6 @@ const ModalToDo = ({
       setIsDropDownOpen(false);
     }
   };
-
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutsideDropDown);
     return () => {
@@ -130,7 +127,7 @@ const ModalToDo = ({
         : [...prevSelectedDays, day],
     );
   };
-
+  // 할일 생성 mutation
   const { mutate: createTask } = useMutation({
     mutationKey: [
       name,
@@ -141,24 +138,23 @@ const ModalToDo = ({
       selectedOption,
     ],
     mutationFn: async () => {
-      const frequencyType = getFrequency(); // 올바른 frequencyType 반환
+      const frequencyType = getFrequency();
 
-      // taskListId가 유효한지 확인
+      // taskListId의 유효성 확인
       if (!taskListId) {
         throw new Error('Task List ID is required');
       }
-
       const requestData = {
         name: name || '',
         description: description || '',
         startDate: startDate ? startDate.toISOString() : undefined,
         frequencyType, // 주기 유형
         ...(frequencyType === 'MONTHLY' && {
-          monthDay: startDate ? startDate.getDate() : undefined, // 월의 날 추가
+          monthDay: startDate ? startDate.getDate() : undefined,
         }),
         ...(frequencyType === 'WEEKLY' &&
           weekDaysNumbers.length > 0 && {
-            weekDays: weekDaysNumbers, // 주간 요일 추가
+            weekDays: weekDaysNumbers,
           }),
       };
 
@@ -166,20 +162,15 @@ const ModalToDo = ({
       if (frequencyType === 'MONTHLY' && requestData.monthDay === undefined) {
         throw new Error('monthDay is required for MONTHLY frequency');
       }
-
       if (frequencyType === 'WEEKLY' && requestData.weekDays?.length === 0) {
         throw new Error('weekDays is required for WEEKLY frequency');
       }
-
       console.log('요청 데이터:', JSON.stringify(requestData, null, 2));
-
       const response = await authAxiosInstance.post(
         `/groups/${groupId}/task-lists/${taskListId}/tasks`,
         requestData,
       );
-
       console.log('서버 응답:', JSON.stringify(response.data, null, 2));
-
       return response.data;
     },
     onSuccess: (data: Task) => {
@@ -191,6 +182,79 @@ const ModalToDo = ({
   });
   console.log('모달에서 startDate 파라미터 :', startDate?.toISOString());
   console.log(selectedDays);
+
+  // 기존 task 데이터를 수정 모드일 때 초기화
+  useEffect(() => {
+    if (isEditMode && existingTask) {
+      setName(existingTask.name);
+      setDescription(existingTask.description);
+      setStartDate(new Date(existingTask.date));
+      setSelectedOption(existingTask.frequency || '반복 안함');
+      if (existingTask.frequency === 'WEEKLY' && existingTask.weekDays) {
+        setSelectedDays(
+          existingTask.weekDays.map(
+            (weekDaysNumbers: number) => WeekDays[weekDaysNumbers],
+          ),
+        );
+      }
+    } else {
+      console.error('existingTask is undefined');
+    }
+  }, [isEditMode, existingTask]);
+  console.log('수정할 task:', existingTask);
+  const {
+    mutate: updateTask,
+    isError,
+    error,
+  } = useMutation({
+    mutationFn: async () => {
+      const frequencyType = getFrequency();
+
+      // 필수 값 확인
+      if (!taskListId || !existingTask?.id) {
+        throw new Error('Task or List ID is required');
+      }
+
+      // 주 반복일 경우 weekDaysNumbers 값 확인
+      const requestData = {
+        name,
+        description,
+        ...(frequencyType === 'WEEKLY' && { weekDays: weekDaysNumbers }),
+        ...(frequencyType === 'MONTHLY' && { monthDay: startDate?.getDate() }),
+      };
+
+      console.log('PATCH 요청 데이터:', requestData); // 요청 데이터 확인
+
+      // PATCH 요청
+      const response = await authAxiosInstance.patch(
+        `/groups/${groupId}/task-lists/${taskListId}/tasks/${existingTask?.id}`,
+        requestData,
+      );
+
+      console.log('PATCH 응답 데이터:', response.data); // 응답 데이터 확인
+
+      return response.data;
+    },
+    onSuccess: (data: ExtendedTask) => {
+      console.log('성공!!', data); // 성공 로그
+      onCreate(data); // 부모 컴포넌트에 변경사항 전달
+      onClose(); // 모달 닫기
+      refetch(); // 최신 데이터 다시 불러오기
+    },
+    onError: (err: any) => {
+      console.error('업데이트 중 오류 발생:', err.message); // 에러 메시지 출력
+    },
+  });
+
+  // Task 생성 또는 수정 처리
+  const handleSubmit = () => {
+    if (isEditMode) {
+      updateTask();
+    } else {
+      createTask();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -207,7 +271,6 @@ const ModalToDo = ({
                 할 일은 실제로 행동 가능한 작업 중심으로 작성해주시면 좋습니다.
               </div>
             </div>
-
             {/* 할 일 제목 입력 */}
             <div className="flex h-[83px] w-full flex-col justify-between">
               <h2 className="text-lg-medium text-text-primary">할 일 제목</h2>
@@ -220,7 +283,6 @@ const ModalToDo = ({
                 placeholder="할 일 제목을 입력해주세요."
               />
             </div>
-
             {/* 날짜 및 시간 선택 */}
             <div className="flex w-full flex-col gap-4">
               <h2 className="text-lg-medium text-text-primary">
@@ -234,8 +296,8 @@ const ModalToDo = ({
                   {startDate
                     ? format(startDate, 'yyyy년 MM월 dd일')
                     : '날짜 선택'}
+                  Expand All @@ -244,93 +325,89 @@
                 </button>
-
                 {/* 캘린더 */}
                 {isCalendarOpen && (
                   <div ref={calendarRef}>
@@ -250,7 +312,6 @@ const ModalToDo = ({
                 )}
               </div>
             </div>
-
             {/* 반복 설정 드롭다운 */}
             <div className="flex h-[79px] w-full flex-col justify-between">
               <h2 className="text-lg-medium text-text-primary">반복 설정</h2>
@@ -262,7 +323,6 @@ const ModalToDo = ({
                   {selectedOption}
                   <Image src={Toggle} alt="토글" width={24} height={24} />
                 </button>
-
                 {/* 드롭다운 메뉴 */}
                 {isDropDownOpen && (
                   <div
@@ -285,7 +345,6 @@ const ModalToDo = ({
                 )}
               </div>
             </div>
-
             {/* 주 반복 시 요일 선택 */}
             {selectedOption === '주 반복' && (
               <div className="flex h-[79px] w-full flex-col justify-between">
@@ -307,7 +366,6 @@ const ModalToDo = ({
                 </div>
               </div>
             )}
-
             {/* 할 일 메모 입력 */}
             <div className="flex h-[110px] w-full flex-col justify-between">
               <h2 className="text-lg-medium text-text-primary">할 일 메모</h2>
@@ -320,17 +378,12 @@ const ModalToDo = ({
                 placeholder="메모를 입력해주세요."
               />
             </div>
-
             {/* 만들기 버튼 */}
             <button
               className="px-auto py-auto mt-2 h-[47px] w-full rounded-xl bg-brand-primary text-text-inverse"
-              onClick={() => {
-                // TODO: 데이터 생성 API 호출
-                createTask();
-                onClose();
-              }}
+              onClick={handleSubmit}
             >
-              만들기
+              {isEditMode ? '수정하기' : '만들기'}
             </button>
           </div>
         </div>
@@ -338,5 +391,4 @@ const ModalToDo = ({
     </ModalPortal>
   );
 };
-
 export default ModalToDo;

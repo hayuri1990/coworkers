@@ -13,13 +13,17 @@ import { format, parseISO } from 'date-fns';
 
 interface ListCardProps {
   task: Task;
-  onSelectOption: (option: string) => void;
+  onDelete: (taskId: number) => void;
+  onEdit: (taskId: number) => void;
+  onSelectOption: (option: string) => void; // 타입 수정
   onCheckboxChange: (checked: boolean) => void;
   checked: boolean;
 }
 
 export default function ListCard({
   task,
+  onEdit,
+  onDelete,
   onSelectOption,
   onCheckboxChange,
   checked,
@@ -28,23 +32,19 @@ export default function ListCard({
     const date = parseISO(dateString); // ISO 8601 문자열을 Date 객체로 변환
     return format(date, 'yyyy년 MM월 dd일');
   }
+
   if (!task) {
     return null;
   }
-
   return (
     <div className="h-18.5-custom relative mb-4 rounded-lg bg-background-secondary px-3.5 py-3">
       <div className="mb-2.5 flex justify-between">
         <div className="flex">
           <Checkbox onChange={onCheckboxChange} checked={checked} />
           <div
-            className={
-              checked
-                ? 'text-md-regular my-auto ml-2 mr-3 text-text-primary line-through'
-                : 'text-md-regular my-auto ml-2 mr-3 text-text-primary'
-            }
+            className={`text-md-regular ${checked ? 'line-through' : ''} my-auto ml-2 mr-3 text-text-primary`}
           >
-            {task.description}
+            {task.name}
           </div>
           {/* 데스크탑, 태블릿일 때는 comment가 원래 위치 */}
           <div className="hidden md:flex md:items-center lg:flex lg:items-center">
@@ -62,7 +62,12 @@ export default function ListCard({
               {task.commentCount}
             </div>
           </div>
-          <ListCardDropdown onSelectOption={onSelectOption} />
+          <ListCardDropdown
+            onSelectOption={onSelectOption}
+            onEdit={onEdit}
+            taskId={task.id}
+            onDelete={onDelete}
+          />
         </div>
       </div>
       <div className="flex gap-2.5">
