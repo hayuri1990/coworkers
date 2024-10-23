@@ -42,9 +42,10 @@ export default function ResetPwdModal({
         '/user/send-reset-password-email',
         {
           email: data.email,
-          redirectUrl: process.env.NEXTAUTH_URL,
+          redirectUrl: 'https://coworkers-team-2.vercel.app',
         },
       );
+
       if (result.status === 200) {
         openToast('이메일을 전송했습니다.', 'success');
         setTimeout(() => {
