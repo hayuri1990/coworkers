@@ -22,7 +22,7 @@ export default function useRefreshToken() {
         );
         const timeRemaining = accessTokenExpires - currentTime;
 
-        if (timeRemaining <= 0) {
+        if (timeRemaining <= 60 * 5) {
           try {
             update();
           } catch (error) {
@@ -32,8 +32,8 @@ export default function useRefreshToken() {
       }
     };
 
-    // 5초마다 토큰 만료 여부 체크
-    interval.current = setInterval(watchAndUpdateIfExpire, 5 * 1000);
+    // 1분 간격으로 토큰 만료 여부 체크하도록 setInterval을 설정
+    interval.current = setInterval(watchAndUpdateIfExpire, 60 * 1000);
 
     // 컴포넌트 언마운트 시 interval 해제하여 메모리 누수를 방지
     return () => {
