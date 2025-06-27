@@ -50,7 +50,6 @@ export async function middleware(req: NextRequest) {
       });
 
       const memberships = response.data.memberships;
-      console.log('User memberships:', memberships);
 
       // 사용자가 소속된 그룹 중에 해당 groupId가 있는지 확인
       const isGroupMember = memberships.some(
@@ -85,5 +84,3 @@ export async function middleware(req: NextRequest) {
     }
   }
 }
-
-// 해당 경로가 아닌 경우 요청을 계속 처리

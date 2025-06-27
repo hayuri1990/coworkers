@@ -72,7 +72,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
     signOut: '/',
   },
   callbacks: {
-    async redirect({ url, baseUrl }) {
+    async redirect({ baseUrl }) {
       return `${baseUrl}/login`;
     },
     async signIn(params) {
@@ -92,17 +92,12 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
           const idToken = params.account?.id_token;
           params.account.id_token = idToken;
 
-          console.log('@@google 로그인 state', state);
-          console.log('@@google 로그인 idToken', idToken);
-
           return true;
         }
       }
       return true;
     },
     async jwt({ token, user, account }) {
-      console.log('jwt callback 호출됨', { token, user, account });
-
       // 구글 로그인
       if (account?.provider === 'google') {
         token = { ...token };
@@ -110,12 +105,8 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
         const idToken = account.id_token;
         const state = account.state;
 
-        console.log(222, 'idToken', idToken);
-        console.log(222, 'state', state);
-
         if (idToken) {
           try {
-            console.log('구글 API 호출 시도');
             const signInResponse = await publicAxiosInstance.post(
               '/auth/signIn/GOOGLE',
               {
@@ -159,26 +150,20 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
         delete token.picture;
         delete token.sub;
 
-        console.log('token', token);
         return token;
       }
 
       // 토큰 갱신
       if (token.accessToken && token.refreshToken) {
-        console.log('토큰 갱신 처리 시작');
-
         const currentTime = Math.floor(Date.now() / 1000);
         let accessTokenExpired = Math.floor(token.accessTokenExpires / 1000);
         const timeRemaining = accessTokenExpired - 60 * 10 - currentTime;
 
         if (timeRemaining > 1) {
-          // 유효기간 내에는 토큰 그대로 반환
           return token;
         } else {
-          // accessToken이 만료된 경우 갱신
+          // Access Token이 만료된 경우 갱신
           try {
-            console.log('토큰 갱신 API 호출 시도중');
-
             const response = await publicAxiosInstance.post(
               '/auth/refresh-token',
               {
@@ -206,9 +191,8 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
     async session({ session, token }: { session: Session; token: JWT }) {
       session.user = token.user as any;
       session.accessToken = token.accessToken as any;
-      session.error = token.error as any;
       session.accessTokenExpires = token.accessTokenExpires as any;
-      console.log('@@@session', session);
+      session.error = token.error as any;
 
       return session;
     },

@@ -28,7 +28,6 @@ const useSessionStore = create<SessionState>((set) => ({
   accessTokenExpires: null,
   // 세션 데이터 업데이트
   setSession: (session) => {
-    // console.log('Setting session data:', session);
     set((state) => ({
       ...state,
       user: session.user,
@@ -38,7 +37,6 @@ const useSessionStore = create<SessionState>((set) => ({
   },
   // 세션을 명시적으로 초기화
   clearSession: () => {
-    // console.log('Clearing session data');
     set({
       user: null,
       accessToken: null,
