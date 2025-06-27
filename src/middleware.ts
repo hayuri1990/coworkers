@@ -21,9 +21,9 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req });
   console.log('***JWT Token:', token);
 
-  // 사용자가 로그인하지 않은 경우 랜딩페이지로 리다이렉트
+  // 사용자가 로그인하지 않은 경우 로그인 페이지로 리다이렉트
   if (!token) {
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   // 요청 경로에서 groupId 추출 (e.g., teampage/{groupId})
