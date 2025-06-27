@@ -13,12 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [queryClient] = useState(() => new QueryClient());
-  const session = useSessionStore((state) => state);
   return (
     <html lang="ko">
       <QueryClientProvider client={queryClient}>
         <body>
-          <Providers session={session}>
+          <Providers>
             <SessionStoreUpdater />
             <main>{children}</main>
             <div id="__next"></div>
@@ -47,7 +46,7 @@ const SessionStoreUpdater = () => {
         accessTokenExpires: session.accessTokenExpires || null,
       });
     }
-  }, [session, setSession]);
+  }, [session, setSession, clearSession]);
 
   return null;
 };
