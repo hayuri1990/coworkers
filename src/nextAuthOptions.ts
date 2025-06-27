@@ -26,7 +26,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
           if (user) {
             return {
               ...user,
-              accessTokenExpires: Date.now() + 60 * 60 * 1 * 1000,
+              accessTokenExpires: Date.now() + 60 * 60 * 1000,
             };
           } else {
             return null;
@@ -60,12 +60,12 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 60 * 60 * 1,
-    updateAge: 60 * 60 * 1,
+    maxAge: 60 * 60,
+    updateAge: 60 * 60,
   },
   jwt: {
     secret: process.env.NEXTAUTH_SECRET,
-    maxAge: 60 * 60 * 1,
+    maxAge: 60 * 60,
   },
   pages: {
     signIn: '/login',
@@ -122,7 +122,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
             token.accessToken = newTokens.accessToken;
             token.refreshToken = newTokens.refreshToken;
             token.accessTokenExpires =
-              Math.floor(new Date().getTime()) + 60 * 60 * 1 * 1000;
+              Math.floor(new Date().getTime()) + 60 * 60;
 
             return token;
           } catch (error) {
@@ -156,8 +156,8 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
       // 토큰 갱신
       if (token.accessToken && token.refreshToken) {
         const currentTime = Math.floor(Date.now() / 1000);
-        let accessTokenExpired = Math.floor(token.accessTokenExpires / 1000);
-        const timeRemaining = accessTokenExpired - 60 * 10 - currentTime;
+        const accessTokenExpired = Math.floor(token.accessTokenExpires / 1000);
+        const timeRemaining = accessTokenExpired - currentTime;
 
         if (timeRemaining > 1) {
           return token;
@@ -172,7 +172,7 @@ export const getOptions = (req?: Request): NextAuthOptions => ({
             );
             const newTokens = response.data;
             token.accessToken = newTokens.accessToken;
-            token.accessTokenExpires = Date.now() + 60 * 60 * 1 * 1000;
+            token.accessTokenExpires = Date.now() + 60 * 60 * 1000;
 
             console.log('토큰 갱신 성공', token);
 
