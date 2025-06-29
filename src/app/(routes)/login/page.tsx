@@ -55,7 +55,6 @@ export default function LoginPage() {
     setPassword(data.password);
 
     const result = await signInUser();
-    console.log('###result', result);
 
     if (result) {
       openToast(`${user?.nickname}님, 환영합니다.`, 'success');
