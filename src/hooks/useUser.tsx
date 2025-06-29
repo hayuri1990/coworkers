@@ -20,7 +20,6 @@ export default function useUser(id?: number) {
           .get(`/user`)
           .then((res) => res.data)
           .then((data) => {
-            console.log(data);
             return data;
           })
           .catch((err) => {
