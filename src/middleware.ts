@@ -21,9 +21,9 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req });
   console.log('***JWT Token:', token);
 
-  // 사용자가 로그인하지 않은 경우 랜딩페이지로 리다이렉트
+  // 사용자가 로그인하지 않은 경우 로그인 페이지로 리다이렉트
   if (!token) {
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   // 요청 경로에서 groupId 추출 (e.g., teampage/{groupId})
@@ -50,7 +50,6 @@ export async function middleware(req: NextRequest) {
       });
 
       const memberships = response.data.memberships;
-      console.log('User memberships:', memberships);
 
       // 사용자가 소속된 그룹 중에 해당 groupId가 있는지 확인
       const isGroupMember = memberships.some(
@@ -85,5 +84,3 @@ export async function middleware(req: NextRequest) {
     }
   }
 }
-
-// 해당 경로가 아닌 경우 요청을 계속 처리

@@ -18,7 +18,7 @@ export const loginStore = create<LoginState>((set) => ({
   setPassword: (password: string) => set({ password }),
   isLoading: false,
   error: null,
-  signInUser: async () => {
+  signInUser: async (): Promise<boolean> => {
     // 로그인 로직
     try {
       const { email, password } = loginStore.getState();
@@ -28,8 +28,12 @@ export const loginStore = create<LoginState>((set) => ({
         password,
         redirect: false,
       });
+
+      return response?.ok ?? false;
     } catch (error) {
       console.error('로그인 중 오류 발생:', error);
+
+      return false;
     }
   },
 }));
