@@ -82,7 +82,7 @@ export default function Page() {
 
   const domain = checkDomain(user?.email);
 
-  // 이름, 이미지 수정
+  // 닉네임, 프로필 이미지 수정
   const { userData } = useUser(user?.id);
   const queryClient = useQueryClient();
   const {
@@ -111,8 +111,9 @@ export default function Page() {
       router.push('/mypage');
     },
     onError: (error: any) => {
-      console.error('에러 발생', error);
-      openToast2('회원 정보 수정 실패', 'error');
+      const errorMessage =
+        error.response?.data?.message ?? '회원 정보 수정 실패';
+      openToast2(errorMessage, 'error');
     },
   });
 
@@ -147,7 +148,7 @@ export default function Page() {
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} />
         </div>
         <div className="mb-6">
-          <label className="text-lg-medium mb-3 block">이름</label>
+          <label className="text-lg-medium mb-3 block">닉네임</label>
           <input
             {...register('nickname', {
               required: true,
