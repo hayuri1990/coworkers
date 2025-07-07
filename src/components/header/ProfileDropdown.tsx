@@ -81,7 +81,10 @@ export default function ProfileDropdown({
         </div>
       </button>
       {isOpen && (
-        <ul className="text-lg-regular absolute right-0 top-10 z-30 mt-2 flex h-[184px] w-[135px] flex-col justify-center gap-[8px] rounded-[12px] border border-background-tertiary bg-background-secondary p-[14px] text-sm shadow-lg">
+        <ul
+          className="text-lg-regular absolute right-0 top-10 z-30 mt-2 flex h-[184px] w-[135px] flex-col justify-center gap-[8px] rounded-[12px] border border-background-tertiary bg-background-secondary p-[14px] text-sm shadow-lg"
+          onClick={toggleDropdown}
+        >
           <Link className="mg-0" href="/my-history">
             <li className="rounded-[8px] bg-background-secondary p-2 text-center hover:bg-slate-700">
               마이 히스토리
